@@ -3,10 +3,19 @@ project(gem_mpv)
 
 set(CMAKE_MODULE_PATH
   ${CMAKE_CURRENT_LIST_DIR}/CMake-modules)
-set(CMAKE_PREFIX_PATH "/home/antoine/dev/mpv/build/install/")
+set(CMAKE_PREFIX_PATH
+  "/home/antoine/dev/mpv/build/install/"
+  "/usr/local/lib/pkgconfig/"
+  "/usr/lib/pkgconfig/")
+
+find_package(Gem)
+if(NOT GEM_INCLUDE_DIR)
+  set(GEM_INCLUDE_DIR /usr/local/include/Gem)
+endif()
 
 find_package(MPV REQUIRED)
 
+message(STATUS "Gem include dir: ${GEM_INCLUDE_DIR}")
 message(STATUS "MPV include dir: ${MPV_INCLUDE_DIR}")
 message(STATUS "MPV lib : ${MPV_LIBRARY}")
 
@@ -21,7 +30,7 @@ set(HEADERS
 )
 
 include_directories(
-  /usr/local/include/Gem
+  ${GEM_INCLUDE_DIR}
   ${MPV_INCLUDE_DIR}
 )
 
