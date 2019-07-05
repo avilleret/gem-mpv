@@ -17,11 +17,15 @@ public:
   virtual void stopRendering(void);
   virtual void render(GemState *state);
 
-  void ext_fb_mess_cb(t_symbol*s, int argc, t_atom*argv);
+  void load_mess(const std::string& s);
+  void pause_mess();
+  void play_mess();
 
 private:
   mpv_handle* m_mpv{};
   mpv_render_context* m_mpv_gl{};
 
   bool m_init{};
+  std::string m_file{};
+  bool m_pause{};
 };

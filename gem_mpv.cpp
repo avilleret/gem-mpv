@@ -77,8 +77,7 @@ void mpv::startRendering(void)
     return;
   }
 
-  const char *cmd[] = {"loadfile", "test.mov", nullptr};
-  mpv_command(m_mpv, cmd);
+  load_mess(m_file);
 
   m_init=true;
 }
@@ -92,7 +91,40 @@ void mpv::stopRendering(void)
     mpv_render_context_free(m_mpv_gl);
 }
 
+void mpv::load_mess(const std::string& s)
+{
+  m_file = s;
+
+  if(m_mpv && !m_file.empty())
+  {
+    const char *cmd[] = {"loadfile", m_file.c_str(), nullptr};
+    mpv_command(m_mpv, cmd);
+  }
+}
+
+void mpv::pause_mess()
+{
+  if(m_mpv)
+  {
+    const char *cmd[] = {"pause", "1", nullptr};
+    mpv_command(m_mpv, cmd);
+  }
+}
+
+void mpv::play_mess()
+{
+  if(m_mpv)
+  {
+    const char *cmd[] = {"play", nullptr};
+    mpv_command(m_mpv, cmd);
+  }
+}
+
 void mpv::obj_setupCallback(t_class *classPtr)
 {
   gemframebuffer::obj_setupCallback(classPtr);
+
+  CPPEXTERN_MSG1(classPtr, "load",   load_mess, std::string);
+  CPPEXTERN_MSG0(classPtr, "play",   play_mess);
+  CPPEXTERN_MSG0(classPtr, "pause",  pause_mess);
 }
