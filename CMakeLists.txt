@@ -13,7 +13,7 @@ if(NOT GEM_INCLUDE_DIR)
   set(GEM_INCLUDE_DIR /usr/local/include/Gem)
 endif()
 
-find_package(MPV REQUIRED)
+find_package(MPV 0.27.2 REQUIRED)
 
 message(STATUS "Gem include dir: ${GEM_INCLUDE_DIR}")
 message(STATUS "MPV include dir: ${MPV_INCLUDE_DIR}")
