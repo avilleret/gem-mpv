@@ -83,7 +83,7 @@ object;
 #X obj 414 139 tgl 15 0 empty empty empty 17 7 0 10 -262144 -1 -1 0
 1;
 #X msg 109 203 command seek 50 absolute-percent+exact;
-#X obj 417 189 tgl 15 0 empty empty empty 17 7 0 10 -262144 -1 -1 0
+#X obj 417 189 tgl 15 0 empty empty empty 17 7 0 10 -262144 -1 -1 1
 1;
 #X msg 415 160 property_typed b pause \$1;
 #X msg 418 210 property_typed b loop \$1;
@@ -92,6 +92,10 @@ object;
 #X text 602 129 b : bool;
 #X text 602 153 d : double;
 #X text 602 141 i : integer;
+#X msg 598 224 property_typed b loop;
+#X msg 595 200 property loop;
+#X msg 609 253 property_typed d time-pos;
+#X msg 615 275 property_typed d percent-pos;
 #X connect 1 0 2 0;
 #X connect 2 0 1 0;
 #X connect 4 0 16 0;
@@ -134,3 +138,7 @@ object;
 #X connect 46 0 48 0;
 #X connect 47 0 16 0;
 #X connect 48 0 16 0;
+#X connect 53 0 16 0;
+#X connect 54 0 16 0;
+#X connect 55 0 16 0;
+#X connect 56 0 16 0;
