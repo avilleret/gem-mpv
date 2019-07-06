@@ -237,7 +237,7 @@ void mpv::command_mess(t_symbol *s, int argc, t_atom *argv)
           SETSYMBOL(a, sname);
           SETFLOAT(a+1, b ? 1. : 0.);
           outlet_anything(m_prop_outlet, gensym("property"), 2, a);
-          delete data;
+          delete (bool*)data;
           break;
         }
         case MPV_FORMAT_DOUBLE:
@@ -247,7 +247,7 @@ void mpv::command_mess(t_symbol *s, int argc, t_atom *argv)
           SETSYMBOL(a, sname);
           SETFLOAT(a+1, d);
           outlet_anything(m_prop_outlet, gensym("property"), 2, a);
-          delete data;
+          delete (double*)data;
           break;
         }
         case MPV_FORMAT_INT64:
@@ -257,7 +257,7 @@ void mpv::command_mess(t_symbol *s, int argc, t_atom *argv)
           SETSYMBOL(a, sname);
           SETFLOAT(a+1, i);
           outlet_anything(m_prop_outlet, gensym("property"), 2, a);
-          delete data;
+          delete (int64_t*)data;
           break;
         }
         case MPV_FORMAT_STRING:
