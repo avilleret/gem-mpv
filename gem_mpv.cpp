@@ -71,6 +71,34 @@ void mpv::render(GemState *state)
         handle_prop_event(prop);
         break;
       }
+      case MPV_EVENT_LOG_MESSAGE:
+      {
+        struct mpv_event_log_message *msg = (struct mpv_event_log_message *)event->data;
+        printf("[%s] %s: %s", msg->prefix, msg->level, msg->text);
+        int level;
+        switch(msg->log_level)
+        {
+          case MPV_LOG_LEVEL_FATAL:
+            level = 0;
+            break;
+          case MPV_LOG_LEVEL_ERROR:
+            level=1;
+            break;
+          case MPV_LOG_LEVEL_WARN:
+          case MPV_LOG_LEVEL_INFO:
+            level=2;
+            break;
+          case MPV_LOG_LEVEL_V:
+          case MPV_LOG_LEVEL_DEBUG:
+            level=3;
+            break;
+          default:
+            level=41;
+        }
+        if(level != -1)
+          logpost(this->x_obj, level, "[%s] %s: %s", msg->prefix, msg->level, msg->text);
+        break;
+      }
       default:
         ;
     }
@@ -366,6 +394,18 @@ void mpv :: dimen_mess(int width, int height)
   }
 }
 
+void mpv::log_mess(std::string level)
+{
+  if(!m_mpv)
+    return;
+
+  auto err = mpv_request_log_messages(m_mpv, level.c_str());
+  if(err != MPV_ERROR_SUCCESS)
+  {
+    error("can't set log level to '%s', error code: %d", level.c_str(), err);
+  }
+}
+
 void mpv::obj_setupCallback(t_class *classPtr)
 {
   gemframebuffer::obj_setupCallback(classPtr);
@@ -375,5 +415,5 @@ void mpv::obj_setupCallback(t_class *classPtr)
   CPPEXTERN_MSG(classPtr, "command_typed",  command_mess);
   CPPEXTERN_MSG(classPtr, "property",  command_mess);
   CPPEXTERN_MSG(classPtr, "property_typed",  command_mess);
-
+  CPPEXTERN_MSG1(classPtr, "log_level",  log_mess, std::string);
 }

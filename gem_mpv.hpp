@@ -171,6 +171,7 @@ class GEM_EXTERN mpv : public gemframebuffer
 
     void command_mess(t_symbol* s, int argc, t_atom* argv);
     void dimen_mess(int width, int height);
+    void log_mess(std::string);
 
     void inline rise_event_flag(){ m_event_flag = true; };
 
