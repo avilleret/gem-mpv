@@ -189,8 +189,8 @@ class GEM_EXTERN mpv : public gemframebuffer
     bool m_size_changed{};
     bool m_auto_resize{};
 
-    int m_media_width;
-    int m_media_height;
+    int m_media_width{512};
+    int m_media_height{512};
 
     t_outlet* m_prop_outlet{};
 };

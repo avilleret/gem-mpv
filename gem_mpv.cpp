@@ -150,9 +150,6 @@ void mpv::startRendering(void)
   }
 
   m_init=true;
-  t_atom a;
-  SETSYMBOL(&a, m_file);
-  command_mess(gensym("load"), 1, &a);
 }
 
 void mpv::stopRendering(void)
@@ -390,6 +387,7 @@ void mpv :: dimen_mess(int width, int height)
   }
   else
   {
+    m_auto_resize = false;
     gemframebuffer::dimMess(width, height);
   }
 }
