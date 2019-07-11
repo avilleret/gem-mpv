@@ -40,10 +40,12 @@ mpv::mpv(int argc, t_atom*argv)
     return;
   }
 
+  // observe some property i.e. to change framebuffer dimensions
   mpv_observe_property(m_mpv, 0, "duration", MPV_FORMAT_DOUBLE);
-  mpv_observe_property(m_mpv, 0, "time-pos", MPV_FORMAT_DOUBLE);
   mpv_observe_property(m_mpv, 0, "width",    MPV_FORMAT_INT64);
   mpv_observe_property(m_mpv, 0, "height",   MPV_FORMAT_INT64);
+
+  mpv_request_event(m_mpv, MPV_EVENT_TICK, 1);
   mpv_set_wakeup_callback(m_mpv, wakeup, this);
 }
 
@@ -55,8 +57,9 @@ mpv::~mpv()
 
 void mpv::render(GemState *state)
 {
-  gemframebuffer::render(state);
 
+  bool new_frame=false;
+  m_event_flag=true; // FIXME it appears that the flag is not always rised by wakeup fn
   while(m_mpv && m_event_flag)
   {
     mpv_event *event = mpv_wait_event(m_mpv, 0);
@@ -65,6 +68,21 @@ void mpv::render(GemState *state)
       case MPV_EVENT_NONE:
         m_event_flag=false;
         break;
+      case MPV_EVENT_TICK:
+      {
+        new_frame=true;
+        t_atom argv[2];
+        SETSYMBOL(argv, gensym("d"));
+        SETSYMBOL(argv+1, gensym("time-pos"));
+        command_mess(gensym("property_typed"), 2, argv);
+        /*
+         * This might be interesting by it's a lot of output
+        t_atom a;
+        SETSYMBOL(&a, gensym("new_frame"));
+        outlet_anything(m_prop_outlet, gensym("event"), 1, &a);
+        */
+        break;
+      }
       case MPV_EVENT_PROPERTY_CHANGE:
       {
         mpv_event_property *prop = (mpv_event_property *)event->data;
@@ -118,9 +136,18 @@ void mpv::render(GemState *state)
     m_size_changed=false;
   }
 
-  if(m_mpv_gl)
+  // FIXME : when not calling gemframebuffer::render(state),
+  // lots of errors are printed in Pd's console like :
+  // GL[1284]: stack underflow
+
+  // if(new_frame)
+  if(true)
   {
-    mpv_opengl_cb_draw(m_mpv_gl, m_frameBufferIndex, m_width, m_height);
+    gemframebuffer::render(state);
+    if(m_mpv_gl)
+    {
+      mpv_opengl_cb_draw(m_mpv_gl, m_frameBufferIndex, m_width, m_height);
+    }
   }
 }
 
