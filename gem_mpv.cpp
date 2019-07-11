@@ -68,6 +68,27 @@ void mpv::render(GemState *state)
       case MPV_EVENT_NONE:
         m_event_flag=false;
         break;
+      case MPV_EVENT_START_FILE:
+      {
+        t_atom a;
+        SETSYMBOL(&a, gensym("start"));
+        outlet_anything(m_prop_outlet, gensym("event"), 1, &a);
+        break;
+      }
+      case MPV_EVENT_END_FILE:
+      {
+        t_atom a;
+        SETSYMBOL(&a, gensym("end"));
+        outlet_anything(m_prop_outlet, gensym("event"), 1, &a);
+        break;
+      }
+      case MPV_EVENT_FILE_LOADED:
+      {
+        t_atom a;
+        SETSYMBOL(&a, gensym("file_loaded"));
+        outlet_anything(m_prop_outlet, gensym("event"), 1, &a);
+        break;
+      }
       case MPV_EVENT_TICK:
       {
         new_frame=true;
@@ -76,7 +97,7 @@ void mpv::render(GemState *state)
         SETSYMBOL(argv+1, gensym("time-pos"));
         command_mess(gensym("property_typed"), 2, argv);
         /*
-         * This might be interesting by it's a lot of output
+         * This might be interesting but it's a lot of output
         t_atom a;
         SETSYMBOL(&a, gensym("new_frame"));
         outlet_anything(m_prop_outlet, gensym("event"), 1, &a);
