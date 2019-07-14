@@ -132,6 +132,33 @@ static void prop_to_atom(mpv_event_property* prop, std::vector<t_atom>& res)
       std::cout << "format: " << prop->format << " not handled" << std::endl;
   }
 }
+
+static void post_mpv_log(mpv* x, mpv_event_log_message* msg)
+{
+  int level;
+  switch(msg->log_level)
+  {
+    case MPV_LOG_LEVEL_FATAL:
+      level=0;
+      break;
+    case MPV_LOG_LEVEL_ERROR:
+      level=1;
+      break;
+    case MPV_LOG_LEVEL_WARN:
+    case MPV_LOG_LEVEL_INFO:
+      level=2;
+      break;
+    case MPV_LOG_LEVEL_V:
+    case MPV_LOG_LEVEL_DEBUG:
+      level=3;
+      break;
+    default:
+      level=41;
+  }
+  if(level != -1)
+    logpost(x->x_obj, level, "[%s] %s: %s", msg->prefix, msg->level, msg->text);
+}
+
 mpv::mpv(int argc, t_atom*argv)
   : gemframebuffer(argc, argv)
 {
@@ -184,6 +211,14 @@ void mpv::render(GemState *state)
       case MPV_EVENT_NONE:
         m_event_flag=false;
         break;
+      case MPV_EVENT_SHUTDOWN:
+        break;
+      case MPV_EVENT_LOG_MESSAGE:
+      {
+        struct mpv_event_log_message *msg = (struct mpv_event_log_message *)event->data;
+        post_mpv_log(this, msg);
+        break;
+      }
       case MPV_EVENT_START_FILE:
       {
         t_atom a;
@@ -231,10 +266,19 @@ void mpv::render(GemState *state)
       case MPV_EVENT_TICK:
       {
         new_frame=true;
-        t_atom argv[2];
-        SETSYMBOL(argv, gensym("d"));
-        SETSYMBOL(argv+1, gensym("time-pos"));
-        command_mess(gensym("property_typed"), 2, argv);
+        {
+          static t_atom argv[2];
+          SETSYMBOL(argv, gensym("d"));
+          SETSYMBOL(argv+1, gensym("time-pos"));
+          command_mess(gensym("property_typed"), 2, argv);
+        }
+        {
+          static t_atom argv[2];
+          SETSYMBOL(argv, gensym("d"));
+          SETSYMBOL(argv+1, gensym("percent-pos"));
+          command_mess(gensym("property_typed"), 2, argv);
+        }
+
         /*
          * This might be interesting but it's a lot of output
         t_atom a;
@@ -249,36 +293,17 @@ void mpv::render(GemState *state)
         handle_prop_event(prop);
         break;
       }
-      case MPV_EVENT_LOG_MESSAGE:
-      {
-        struct mpv_event_log_message *msg = (struct mpv_event_log_message *)event->data;
-        printf("[%s] %s: %s", msg->prefix, msg->level, msg->text);
-        int level;
-        switch(msg->log_level)
-        {
-          case MPV_LOG_LEVEL_FATAL:
-            level = 0;
-            break;
-          case MPV_LOG_LEVEL_ERROR:
-            level=1;
-            break;
-          case MPV_LOG_LEVEL_WARN:
-          case MPV_LOG_LEVEL_INFO:
-            level=2;
-            break;
-          case MPV_LOG_LEVEL_V:
-          case MPV_LOG_LEVEL_DEBUG:
-            level=3;
-            break;
-          default:
-            level=41;
-        }
-        if(level != -1)
-          logpost(this->x_obj, level, "[%s] %s: %s", msg->prefix, msg->level, msg->text);
+      case MPV_EVENT_COMMAND_REPLY:
+      case MPV_EVENT_GET_PROPERTY_REPLY:
+      case MPV_EVENT_SET_PROPERTY_REPLY:
+      // case MPV_EVENT_TRACKS_CHANGED: // deprecated
+      // case MPV_EVENT_TRACK_SWITCHED: // deprecated
+      case MPV_EVENT_PAUSE:
+      case MPV_EVENT_IDLE:
+      case MPV_EVENT_UNPAUSE:
+      case MPV_EVENT_QUEUE_OVERFLOW:
+      case MPV_EVENT_HOOK:
         break;
-      }
-      default:
-        ;
     }
   }
 
