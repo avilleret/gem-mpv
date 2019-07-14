@@ -183,11 +183,6 @@ mpv::mpv(int argc, t_atom*argv)
     return;
   }
 
-  // observe some property i.e. to change framebuffer dimensions
-  mpv_observe_property(m_mpv, 0, "duration", MPV_FORMAT_DOUBLE);
-  mpv_observe_property(m_mpv, 0, "width",    MPV_FORMAT_INT64);
-  mpv_observe_property(m_mpv, 0, "height",   MPV_FORMAT_INT64);
-
   mpv_request_event(m_mpv, MPV_EVENT_TICK, 1);
   mpv_set_wakeup_callback(m_mpv, wakeup, this);
 }
