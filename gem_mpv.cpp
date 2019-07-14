@@ -87,6 +87,29 @@ void mpv::render(GemState *state)
         t_atom a;
         SETSYMBOL(&a, gensym("file_loaded"));
         outlet_anything(m_prop_outlet, gensym("event"), 1, &a);
+
+        // observed properties doesn't always send changes
+        // or at least we may have missed it
+        mpv_get_property(m_mpv, "width",  MPV_FORMAT_INT64, &m_media_width);
+        mpv_get_property(m_mpv, "height", MPV_FORMAT_INT64, &m_media_height);
+        m_size_changed = true;
+        {
+          t_atom a[2];
+
+          SETSYMBOL(a, gensym("width"));
+          SETFLOAT(a+1, m_media_width);
+          outlet_anything(m_prop_outlet, gensym("property"), 2, a);
+
+          SETSYMBOL(a, gensym("height"));
+          SETFLOAT(a+1, m_media_height);
+          outlet_anything(m_prop_outlet, gensym("property"), 2, a);
+        }
+        {
+          static t_atom argv[2];
+          SETSYMBOL(argv, gensym("f"));
+          SETSYMBOL(argv+1, gensym("duration"));
+          command_mess(gensym("property_typed"), 2, argv);
+        }
         break;
       }
       case MPV_EVENT_TICK:
@@ -145,11 +168,6 @@ void mpv::render(GemState *state)
 
   if(m_size_changed)
   {
-    t_atom atom[2];
-    SETFLOAT(atom, m_media_width);
-    SETFLOAT(atom+1, m_media_height);
-    outlet_anything(m_prop_outlet, gensym("resolution"), 2, atom);
-
     if(m_auto_resize)
     {
       gemframebuffer::dimMess(m_media_width, m_media_height);
@@ -160,6 +178,7 @@ void mpv::render(GemState *state)
   // FIXME : when not calling gemframebuffer::render(state),
   // lots of errors are printed in Pd's console like :
   // GL[1284]: stack underflow
+  // but we should only draw when new frame are available for performance optimization
 
   // if(new_frame)
   if(true)
