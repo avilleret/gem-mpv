@@ -299,10 +299,6 @@ void mpv::command_mess(t_symbol *s, int argc, t_atom *argv)
             format = MPV_FORMAT_FLAG;
             data = new bool();
             break;
-          case 'd':
-            format = MPV_FORMAT_DOUBLE;
-            data = new double();
-            break;
           case 'i':
             format = MPV_FORMAT_INT64;
             data = new int64_t();
@@ -310,8 +306,11 @@ void mpv::command_mess(t_symbol *s, int argc, t_atom *argv)
           case 's':
             format = MPV_FORMAT_STRING;
             break;
+          case 'd':
           default:
-            ;
+            format = MPV_FORMAT_DOUBLE;
+            data = new double();
+            break;
         }
       }
       auto err = mpv_get_property(m_mpv, name, format, data);
