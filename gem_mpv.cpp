@@ -16,6 +16,122 @@ static void *get_proc_address_mpv(void *fn_ctx, const char *name)
   return (void *)glXGetProcAddress((const GLubyte*)name);
 }
 
+static void node_to_atom(const mpv_node* node, std::vector<t_atom>& res)
+{
+  switch(node->format)
+  {
+    case MPV_FORMAT_STRING:
+    case MPV_FORMAT_OSD_STRING:
+    {
+      t_atom a;
+      SETSYMBOL(&a, gensym(node->u.string));
+      res.push_back(std::move(a));
+      break;
+    }
+    case MPV_FORMAT_FLAG:
+    {
+      t_atom a;
+      SETFLOAT(&a, node->u.flag);
+      res.push_back(std::move(a));
+      break;
+    }
+    case MPV_FORMAT_INT64:
+    {
+      t_atom a;
+      SETFLOAT(&a, node->u.int64);
+      res.push_back(std::move(a));
+      break;
+    }
+    case MPV_FORMAT_DOUBLE:
+    {
+      t_atom a;
+      SETFLOAT(&a, node->u.double_);
+      res.push_back(std::move(a));
+      break;
+    }
+    case MPV_FORMAT_NODE_ARRAY:
+    {
+      t_atom a;
+      for(int i = 0; i< node->u.list->num; i++)
+      {
+        auto val = node->u.list->values[i];
+        node_to_atom(&val, res);
+      }
+      break;
+    }
+    case MPV_FORMAT_BYTE_ARRAY:
+    case MPV_FORMAT_NODE_MAP:
+    {
+      error("could not handle this node format : %d", node->format);
+      break;
+    }
+    case MPV_FORMAT_NODE:
+    case MPV_FORMAT_NONE:
+      break;
+  }
+}
+
+static void prop_to_atom(mpv_event_property* prop, std::vector<t_atom>& res)
+{
+  const char* name = prop->name;
+  if(name)
+  {
+    t_atom aname;
+    SETSYMBOL(&aname, gensym(name));
+    res.push_back(std::move(aname));
+  }
+
+  if(!prop->data)
+    return;
+
+  switch(prop->format){
+    case MPV_FORMAT_FLAG:
+    {
+      t_atom a;
+      bool b = *(bool *)prop->data;
+      SETFLOAT(&a, b ? 1. : 0.);
+      res.push_back(std::move(a));
+      break;
+    }
+    case MPV_FORMAT_DOUBLE:
+    {
+      t_atom a;
+      double d = *(double *)prop->data;
+      SETFLOAT(&a, d);
+      res.push_back(std::move(a));
+      break;
+    }
+    case MPV_FORMAT_INT64:
+    {
+      t_atom a;
+      int64_t i = *(int64_t*)prop->data;
+      SETFLOAT(&a, i);
+      res.push_back(std::move(a));
+      break;
+    }
+    case MPV_FORMAT_STRING:
+    case MPV_FORMAT_OSD_STRING:
+    {
+      t_atom a;
+      char* s = (char *)prop->data;
+      SETSYMBOL(&a, gensym(s));
+      res.push_back(std::move(a));
+      break;
+    }
+    case MPV_FORMAT_NODE:
+    {
+      mpv_node* node = (mpv_node*)prop->data;
+      node_to_atom(node, res);
+      break;
+    }
+    case MPV_FORMAT_NONE:
+      break;
+    case MPV_FORMAT_NODE_ARRAY:
+    case MPV_FORMAT_NODE_MAP:
+    case MPV_FORMAT_BYTE_ARRAY:
+      std::cout << "format: " << prop->format << " not handled" << std::endl;
+  }
+}
 mpv::mpv(int argc, t_atom*argv)
   : gemframebuffer(argc, argv)
 {
@@ -415,21 +531,7 @@ void mpv::command_mess(t_symbol *s, int argc, t_atom *argv)
 
 void mpv::handle_prop_event(mpv_event_property *prop)
 {
-  if (strcmp(prop->name, "time-pos") == 0) {
-    if (prop->format == MPV_FORMAT_DOUBLE) {
-      double time = *(double *)prop->data;
-      t_atom atom;
-      SETFLOAT(&atom, time);
-      outlet_anything(m_prop_outlet, gensym("time-pos"), 1, &atom);
-    }
-  } else if (strcmp(prop->name, "duration") == 0) {
-    if (prop->format == MPV_FORMAT_DOUBLE) {
-      double time = *(double *)prop->data;
-      t_atom atom;
-      SETFLOAT(&atom, time);
-      outlet_anything(m_prop_outlet, gensym("duration"), 1, &atom);
-    }
-  } else if (strcmp(prop->name, "width") == 0) {
+  if (strcmp(prop->name, "width") == 0) {
     if (prop->format == MPV_FORMAT_INT64) {
       int64_t val = *(int64_t *)prop->data;
       m_media_width = val;
@@ -441,6 +543,11 @@ void mpv::handle_prop_event(mpv_event_property *prop)
       m_media_height = val;
       m_size_changed = true;
     }
+  } else {
+    std::vector<t_atom> a;
+    a.reserve(256);
+    prop_to_atom(prop, a);
+    outlet_anything(m_prop_outlet, gensym("property"), a.size(), a.data());
   }
 }
 
