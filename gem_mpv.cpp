@@ -594,12 +594,13 @@ void mpv::handle_prop_event(mpv_event_property *prop)
       m_media_height = val;
       m_size_changed = true;
     }
-  } else {
-    std::vector<t_atom> a;
-    a.reserve(256);
-    prop_to_atom(prop, a);
-    outlet_anything(m_prop_outlet, gensym("property"), a.size(), a.data());
   }
+
+  std::vector<t_atom> a;
+  a.reserve(256);
+  prop_to_atom(prop, a);
+  outlet_anything(m_prop_outlet, gensym("property"), a.size(), a.data());
+
 }
 
 void mpv :: dimen_mess(int width, int height)
