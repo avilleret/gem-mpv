@@ -297,7 +297,7 @@ void mpv::render(GemState *state)
       case MPV_EVENT_IDLE:
       case MPV_EVENT_UNPAUSE:
       case MPV_EVENT_QUEUE_OVERFLOW:
-      case MPV_EVENT_HOOK:
+      // case MPV_EVENT_HOOK: // not yet available in v0.27.2
         break;
     }
   }
