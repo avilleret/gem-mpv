@@ -186,9 +186,13 @@ class GEM_EXTERN mpv : public gemframebuffer
     std::atomic_bool m_event_flag; // flag rised when new event arrived
     bool m_size_changed{};
     bool m_auto_resize{};
+    bool m_started{};
+    bool m_reload{};
 
     int64_t m_media_width{512};
     int64_t m_media_height{512};
 
     t_outlet* m_prop_outlet{};
+
+    std::vector<t_atom> m_loadfile_cmd;
 };

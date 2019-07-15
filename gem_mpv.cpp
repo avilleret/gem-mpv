@@ -198,7 +198,7 @@ void mpv::render(GemState *state)
 
   bool new_frame=false;
   m_event_flag=true; // FIXME it appears that the flag is not always rised by wakeup fn
-  while(m_mpv && m_event_flag)
+  while(m_mpv && m_event_flag && !m_modified)
   {
     mpv_event *event = mpv_wait_event(m_mpv, 0);
     switch (event->event_id)
@@ -216,6 +216,7 @@ void mpv::render(GemState *state)
       }
       case MPV_EVENT_START_FILE:
       {
+        m_started=false;
         t_atom a;
         SETSYMBOL(&a, gensym("start"));
         outlet_anything(m_prop_outlet, gensym("event"), 1, &a);
@@ -223,6 +224,7 @@ void mpv::render(GemState *state)
       }
       case MPV_EVENT_END_FILE:
       {
+        m_started=false;
         t_atom a;
         SETSYMBOL(&a, gensym("end"));
         outlet_anything(m_prop_outlet, gensym("event"), 1, &a);
@@ -238,40 +240,51 @@ void mpv::render(GemState *state)
         // or at least we may have missed it
         mpv_get_property(m_mpv, "width",  MPV_FORMAT_INT64, &m_media_width);
         mpv_get_property(m_mpv, "height", MPV_FORMAT_INT64, &m_media_height);
-        m_size_changed = true;
+        if(m_auto_resize && (m_media_width != m_width || m_media_height != m_height) )
         {
-          t_atom a[2];
-
-          SETSYMBOL(a, gensym("width"));
-          SETFLOAT(a+1, m_media_width);
-          outlet_anything(m_prop_outlet, gensym("property"), 2, a);
-
-          SETSYMBOL(a, gensym("height"));
-          SETFLOAT(a+1, m_media_height);
-          outlet_anything(m_prop_outlet, gensym("property"), 2, a);
+          gemframebuffer::dimMess(m_media_width, m_media_height);
+          m_reload = true;
         }
+        else
         {
-          static t_atom argv[2];
-          SETSYMBOL(argv, gensym("f"));
-          SETSYMBOL(argv+1, gensym("duration"));
-          command_mess(gensym("property_typed"), 2, argv);
+          m_started=true;
+          {
+            t_atom a[2];
+
+            SETSYMBOL(a, gensym("width"));
+            SETFLOAT(a+1, m_media_width);
+            outlet_anything(m_prop_outlet, gensym("property"), 2, a);
+
+            SETSYMBOL(a, gensym("height"));
+            SETFLOAT(a+1, m_media_height);
+            outlet_anything(m_prop_outlet, gensym("property"), 2, a);
+          }
+          {
+            static t_atom argv[2];
+            SETSYMBOL(argv, gensym("f"));
+            SETSYMBOL(argv+1, gensym("duration"));
+            command_mess(gensym("property_typed"), 2, argv);
+          }
         }
         break;
       }
       case MPV_EVENT_TICK:
       {
         new_frame=true;
+        if(m_started)
         {
-          static t_atom argv[2];
-          SETSYMBOL(argv, gensym("d"));
-          SETSYMBOL(argv+1, gensym("time-pos"));
-          command_mess(gensym("property_typed"), 2, argv);
-        }
-        {
-          static t_atom argv[2];
-          SETSYMBOL(argv, gensym("d"));
-          SETSYMBOL(argv+1, gensym("percent-pos"));
-          command_mess(gensym("property_typed"), 2, argv);
+          {
+            static t_atom argv[2];
+            SETSYMBOL(argv, gensym("d"));
+            SETSYMBOL(argv+1, gensym("time-pos"));
+            command_mess(gensym("property_typed"), 2, argv);
+          }
+          {
+            static t_atom argv[2];
+            SETSYMBOL(argv, gensym("d"));
+            SETSYMBOL(argv+1, gensym("percent-pos"));
+            command_mess(gensym("property_typed"), 2, argv);
+          }
         }
 
         /*
@@ -309,6 +322,13 @@ void mpv::render(GemState *state)
       gemframebuffer::dimMess(m_media_width, m_media_height);
     }
     m_size_changed=false;
+  }
+
+  if(m_reload && !m_modified)
+  {
+    m_reload=false;
+    // reload file when size changed
+    command_mess(gensym("command"), m_loadfile_cmd.size(), m_loadfile_cmd.data());
   }
 
   // FIXME : when not calling gemframebuffer::render(state),
@@ -395,6 +415,20 @@ void mpv::command_mess(t_symbol *s, int argc, t_atom *argv)
   {
     if(!types.empty())
       types = " " + types;
+    if(argc>1 && argv->a_type == A_SYMBOL)
+    {
+      const char* s = argv->a_w.w_symbol->s_name;
+      if( 0 == strcmp("loadfile", s) )
+      {
+        m_started=false;
+
+        // save loadfile command call to reload file if needed
+        m_loadfile_cmd.clear();
+        m_loadfile_cmd.reserve(argc);
+        for(int i=0; i<argc; ++i)
+          m_loadfile_cmd.push_back(argv[i]);
+      }
+    }
     node_builder node(argc, argv, types);
     mpv_node res;
     if(mpv_command_node(m_mpv, node.node(), &res) < 0)
@@ -542,7 +576,6 @@ void mpv::command_mess(t_symbol *s, int argc, t_atom *argv)
       }
     }
   }
-
 }
 
 void mpv::handle_prop_event(mpv_event_property *prop)
