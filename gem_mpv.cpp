@@ -351,8 +351,6 @@ void mpv::startRendering(void)
     error("failed to initialize mpv GL context");
     return;
   }
-
-  m_init=true;
 }
 
 void mpv::stopRendering(void)
@@ -362,8 +360,6 @@ void mpv::stopRendering(void)
 
   if(m_mpv_gl)
     mpv_opengl_cb_uninit_gl(m_mpv_gl);
-
-  m_init=false;
 }
 
 void mpv::command_mess(t_symbol *s, int argc, t_atom *argv)

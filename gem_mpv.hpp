@@ -182,8 +182,6 @@ class GEM_EXTERN mpv : public gemframebuffer
 
     mpv_opengl_cb_context* m_mpv_gl{};
 
-    bool m_init{};
-    t_symbol* m_file{};
     bool m_pause{};
     std::atomic_bool m_event_flag; // flag rised when new event arrived
     bool m_size_changed{};
