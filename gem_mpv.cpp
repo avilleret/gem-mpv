@@ -351,7 +351,6 @@ void mpv::startRendering(void)
 {
   gemframebuffer::startRendering();
 
-  post("startRendering");
   if(!m_mpv)
     return;
 
@@ -375,7 +374,6 @@ void mpv::startRendering(void)
 
 void mpv::stopRendering(void)
 {
-  post("stopRendering");
   gemframebuffer::stopRendering();
 
   if(m_mpv_gl)
