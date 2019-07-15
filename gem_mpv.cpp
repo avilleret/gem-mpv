@@ -471,6 +471,7 @@ void mpv::command_mess(t_symbol *s, int argc, t_atom *argv)
             break;
           case 's':
             format = MPV_FORMAT_STRING;
+            data = new char*{};
             break;
           case 'd':
           default:
@@ -519,11 +520,12 @@ void mpv::command_mess(t_symbol *s, int argc, t_atom *argv)
         }
         case MPV_FORMAT_STRING:
         {
-          char* s = (char *)data;
+          char* s = *(char **)data;
           t_atom a[2];
           SETSYMBOL(a, sname);
           SETSYMBOL(a+1, gensym(s));
           outlet_anything(m_prop_outlet, gensym("property"), 2, a);
+          delete (char *)data;
           break;
         }
         case MPV_FORMAT_NODE:
