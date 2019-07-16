@@ -370,6 +370,8 @@ void mpv::startRendering(void)
     error("failed to initialize mpv GL context");
     return;
   }
+
+  m_reload = true;
 }
 
 void mpv::stopRendering(void)
