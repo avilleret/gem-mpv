@@ -337,7 +337,7 @@ void mpv::render(GemState *state)
   // but we should only draw when new frame are available for performance optimization
 
   // if(new_frame)
-  if(true)
+  if(true && !m_modified)
   {
     gemframebuffer::render(state);
     if(m_mpv_gl)
