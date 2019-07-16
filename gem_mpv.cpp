@@ -328,7 +328,8 @@ void mpv::render(GemState *state)
   {
     m_reload=false;
     // reload file when size changed
-    command_mess(gensym("command"), m_loadfile_cmd.size(), m_loadfile_cmd.data());
+    if(m_loadfile_cmd.size() > 1)
+      command_mess(gensym("command"), m_loadfile_cmd.size(), m_loadfile_cmd.data());
   }
 
   // FIXME : when not calling gemframebuffer::render(state),
