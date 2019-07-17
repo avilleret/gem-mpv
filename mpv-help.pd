@@ -1,4 +1,4 @@
-#N canvas 1068 231 970 680 10;
+#N canvas 726 233 970 680 10;
 #X obj 352 604 cnv 15 100 60 empty empty empty 20 12 0 14 -195568 -66577
 0;
 #N canvas 1021 568 450 300 gemwin 0;
@@ -83,11 +83,11 @@ object;
 1;
 #X msg 415 160 property_typed b pause \$1;
 #X msg 418 210 property_typed b loop \$1;
-#X text 584 110 you can force property and command argument type with
+#X text 584 120 you can force property and command argument type with
 :;
-#X text 602 129 b : bool;
-#X text 602 153 d : double;
-#X text 602 141 i : integer;
+#X text 602 139 b : bool;
+#X text 602 163 d : double;
+#X text 602 151 i : integer;
 #X msg 598 224 property_typed b loop;
 #X msg 595 200 property loop;
 #X msg 609 253 property_typed d time-pos;
@@ -102,7 +102,7 @@ object;
 #X msg 72 44 dimen -1 -1 \, rectangle 1 \, format RGBA;
 #X floatatom 632 421 5 0 0 0 - - -;
 #X obj 635 527 hsl 128 15 0 100 0 0 empty empty position 5 -8 0 10
--262144 -1 -1 3048 1;
+-262144 -1 -1 7874 1;
 #X msg 632 493 set \$1;
 #X msg 604 592 property_typed d percent-pos \$1;
 #X obj 632 443 int;
@@ -125,7 +125,7 @@ to support alpha channel if needed;
 #X connect 7 0 4 0;
 #X restore 609 317 pd alpha;
 #X obj 608 573 hsl 128 15 0 100 0 0 empty empty seek 5 -8 0 10 -262144
--1 -1 0 1;
+-1 -1 12400 1;
 #X obj 406 398 route duration width height time-pos percent-pos;
 #X floatatom 463 424 5 0 0 0 - - -;
 #X floatatom 520 424 5 0 0 0 - - -;
@@ -133,6 +133,12 @@ to support alpha channel if needed;
 #X obj 691 423 print property;
 #X obj 712 397 print others;
 #X msg 232 374 property_typed s filename;
+#X msg 610 298 property_typed d duration;
+#X msg 573 346 property_typed i width;
+#X text 580 65 command and property calls are async to avoid blocking
+;
+#X text 580 78 that means you'll get the result of a request as event
+during a render() call;
 #X connect 1 0 2 0;
 #X connect 2 0 1 0;
 #X connect 4 0 53 0;
@@ -194,3 +200,5 @@ to support alpha channel if needed;
 #X connect 65 5 69 0;
 #X connect 68 0 16 0;
 #X connect 71 0 16 0;
+#X connect 72 0 16 0;
+#X connect 73 0 16 0;
