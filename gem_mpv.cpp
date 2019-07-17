@@ -304,7 +304,7 @@ void mpv::render(GemState *state)
       case MPV_EVENT_VIDEO_RECONFIG:
       case MPV_EVENT_AUDIO_RECONFIG:
         break;
-#ifdef MPV_ENABLE_DEPRECATED:
+#ifdef MPV_ENABLE_DEPRECATED
       case MPV_EVENT_METADATA_UPDATE:
         break;
 #endif
