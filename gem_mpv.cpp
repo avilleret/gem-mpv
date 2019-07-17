@@ -460,7 +460,7 @@ void mpv::command_mess(t_symbol *s, int argc, t_atom *argv)
     if(argc > 0)
     {
       node_builder node(argc, argv, types);
-      auto err = mpv_set_property(m_mpv, name, MPV_FORMAT_NODE, node.node());
+      auto err = mpv_set_property_async(m_mpv, 0, name, MPV_FORMAT_NODE, std::move(node.node()));
       if(err != MPV_ERROR_SUCCESS)
       {
         error("can't set property %s: error code: %d", name, err);
@@ -468,125 +468,30 @@ void mpv::command_mess(t_symbol *s, int argc, t_atom *argv)
     }
     else
     {
-      void* data{};
       mpv_format format = MPV_FORMAT_DOUBLE;
       if(!types.empty())
       {
         switch (types.at(0)) {
           case 'b':
             format = MPV_FORMAT_FLAG;
-            data = new bool();
             break;
           case 'i':
             format = MPV_FORMAT_INT64;
-            data = new int64_t();
             break;
           case 's':
             format = MPV_FORMAT_STRING;
-            data = new char*{};
             break;
           case 'd':
           default:
             format = MPV_FORMAT_DOUBLE;
-            data = new double();
             break;
         }
       }
-      auto err = mpv_get_property(m_mpv, name, format, data);
+      auto err = mpv_get_property_async(m_mpv, 0, name, format);
       if(err != MPV_ERROR_SUCCESS)
       {
-        error("can't get property %s, error code: %d", name, err);
+        error("can't send get property %s request, error code: %d", name, err);
         return;
-      }
-
-      switch (format) {
-        case MPV_FORMAT_FLAG:
-        {
-          bool b = *(bool *)data;
-          t_atom a[2];
-          SETSYMBOL(a, sname);
-          SETFLOAT(a+1, b ? 1. : 0.);
-          outlet_anything(m_prop_outlet, gensym("property"), 2, a);
-          delete (bool*)data;
-          break;
-        }
-        case MPV_FORMAT_DOUBLE:
-        {
-          double d = *(double *)data;
-          t_atom a[2];
-          SETSYMBOL(a, sname);
-          SETFLOAT(a+1, d);
-          outlet_anything(m_prop_outlet, gensym("property"), 2, a);
-          delete (double*)data;
-          break;
-        }
-        case MPV_FORMAT_INT64:
-        {
-          int64_t i = *(int64_t*)data;
-          t_atom a[2];
-          SETSYMBOL(a, sname);
-          SETFLOAT(a+1, i);
-          outlet_anything(m_prop_outlet, gensym("property"), 2, a);
-          delete (int64_t*)data;
-          break;
-        }
-        case MPV_FORMAT_STRING:
-        {
-          char* s = *(char **)data;
-          t_atom a[2];
-          SETSYMBOL(a, sname);
-          SETSYMBOL(a+1, gensym(s));
-          outlet_anything(m_prop_outlet, gensym("property"), 2, a);
-          delete (char *)data;
-          break;
-        }
-        case MPV_FORMAT_NODE:
-        {
-          mpv_node* node = (mpv_node*)data;
-          switch(node->format)
-          {
-            case MPV_FORMAT_STRING:
-            {
-              t_atom a[2];
-              SETSYMBOL(a, sname);
-              SETSYMBOL(a+1, gensym(node->u.string));
-              outlet_anything(m_prop_outlet, gensym("property"), 2, a);
-              break;
-            }
-            case MPV_FORMAT_FLAG:
-            case MPV_FORMAT_INT64:
-            case MPV_FORMAT_DOUBLE:
-            {
-              t_atom a[2];
-              SETSYMBOL(a, sname);
-              switch (node->format) {
-                case MPV_FORMAT_FLAG:
-                  SETFLOAT(a+1, node->u.flag);
-                  break;
-                case MPV_FORMAT_INT64:
-                  SETFLOAT(a+1, node->u.int64);
-                  break;
-                case MPV_FORMAT_DOUBLE:
-                  SETFLOAT(a+1, node->u.double_);
-                  break;
-                default:
-                  return;
-              }
-              outlet_anything(m_prop_outlet, gensym("property"), 2, a);
-              break;
-            }
-            default:
-            {
-              error("could not handle this node format : %d", node->format);
-            }
-          }
-          mpv_free_node_contents(node);
-        }
-        case MPV_FORMAT_NODE_ARRAY:
-        case MPV_FORMAT_NODE_MAP:
-        {
-
-        }
       }
     }
   }
