@@ -184,7 +184,6 @@ class GEM_EXTERN mpv : public gemframebuffer
 
     bool m_pause{};
     std::atomic_bool m_event_flag; // flag rised when new event arrived
-    bool m_size_changed{};
     bool m_auto_resize{};
     bool m_started{};
     bool m_reload{};

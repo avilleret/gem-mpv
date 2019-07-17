@@ -214,6 +214,20 @@ void mpv::render(GemState *state)
         post_mpv_log(this, msg);
         break;
       }
+      case MPV_EVENT_GET_PROPERTY_REPLY:
+      {
+        if(event->error != MPV_ERROR_SUCCESS)
+        {
+          error("error while getting property");
+        } else {
+          auto prop = (mpv_event_property*) event->data;
+          handle_prop_event(prop);
+        }
+        break;
+      }
+      case MPV_EVENT_SET_PROPERTY_REPLY:
+      case MPV_EVENT_COMMAND_REPLY:
+        break;
       case MPV_EVENT_START_FILE:
       {
         m_started=false;
@@ -238,36 +252,23 @@ void mpv::render(GemState *state)
 
         // observed properties doesn't always send changes
         // or at least we may have missed it
-        mpv_get_property(m_mpv, "width",  MPV_FORMAT_INT64, &m_media_width);
-        mpv_get_property(m_mpv, "height", MPV_FORMAT_INT64, &m_media_height);
-        if(m_auto_resize && (m_media_width != m_width || m_media_height != m_height) )
-        {
-          gemframebuffer::dimMess(m_media_width, m_media_height);
-          m_reload = true;
-        }
-        else
-        {
-          m_started=true;
-          {
-            t_atom a[2];
-
-            SETSYMBOL(a, gensym("width"));
-            SETFLOAT(a+1, m_media_width);
-            outlet_anything(m_prop_outlet, gensym("property"), 2, a);
-
-            SETSYMBOL(a, gensym("height"));
-            SETFLOAT(a+1, m_media_height);
-            outlet_anything(m_prop_outlet, gensym("property"), 2, a);
-          }
-          {
-            static t_atom argv[2];
-            SETSYMBOL(argv, gensym("f"));
-            SETSYMBOL(argv+1, gensym("duration"));
-            command_mess(gensym("property_typed"), 2, argv);
-          }
-        }
+        mpv_get_property_async(m_mpv, 'w', "width",  MPV_FORMAT_INT64);
+        mpv_get_property_async(m_mpv, 'h', "height", MPV_FORMAT_INT64);
+        mpv_get_property_async(m_mpv, 'd', "duration", MPV_FORMAT_DOUBLE);
         break;
       }
+#if MPV_ENABLE_DEPRECATED
+      case MPV_EVENT_TRACKS_CHANGED:
+      case MPV_EVENT_TRACK_SWITCHED:
+        break;
+#endif
+      case MPV_EVENT_IDLE:
+        break;
+#ifdef MPV_ENABLE_DEPRECATED
+      case MPV_EVENT_PAUSE:
+      case MPV_EVENT_UNPAUSE:
+        break;
+#endif
       case MPV_EVENT_TICK:
       {
         new_frame=true;
@@ -295,33 +296,45 @@ void mpv::render(GemState *state)
         */
         break;
       }
+#ifdef MPV_ENABLE_DEPRECATED
+      case MPV_EVENT_SCRIPT_INPUT_DISPATCH:
+        break;
+#endif
+      case MPV_EVENT_CLIENT_MESSAGE:
+      case MPV_EVENT_VIDEO_RECONFIG:
+      case MPV_EVENT_AUDIO_RECONFIG:
+        break;
+#ifdef MPV_ENABLE_DEPRECATED:
+      case MPV_EVENT_METADATA_UPDATE:
+        break;
+#endif
+      case MPV_EVENT_SEEK:
+      case MPV_EVENT_PLAYBACK_RESTART:
+        m_started = true;
+        t_atom a;
+        SETSYMBOL(&a, gensym("playback_restart"));
+        outlet_anything(m_prop_outlet, gensym("event"), 1, &a);
+        break;
       case MPV_EVENT_PROPERTY_CHANGE:
       {
         mpv_event_property *prop = (mpv_event_property *)event->data;
         handle_prop_event(prop);
         break;
       }
-      case MPV_EVENT_COMMAND_REPLY:
-      case MPV_EVENT_GET_PROPERTY_REPLY:
-      case MPV_EVENT_SET_PROPERTY_REPLY:
-      // case MPV_EVENT_TRACKS_CHANGED: // deprecated
-      // case MPV_EVENT_TRACK_SWITCHED: // deprecated
-      case MPV_EVENT_PAUSE:
-      case MPV_EVENT_IDLE:
-      case MPV_EVENT_UNPAUSE:
+#ifdef MPV_ENABLE_DEPRECATED
+      case MPV_EVENT_CHAPTER_CHANGE:
+        break;
+#endif
       case MPV_EVENT_QUEUE_OVERFLOW:
       // case MPV_EVENT_HOOK: // not yet available in v0.27.2
         break;
     }
   }
 
-  if(m_size_changed)
+  if(m_auto_resize && (m_media_width != m_width || m_media_height != m_height) )
   {
-    if(m_auto_resize)
-    {
-      gemframebuffer::dimMess(m_media_width, m_media_height);
-    }
-    m_size_changed=false;
+    gemframebuffer::dimMess(m_media_width, m_media_height);
+    m_reload = true;
   }
 
   if(m_reload && !m_modified)
@@ -431,13 +444,11 @@ void mpv::command_mess(t_symbol *s, int argc, t_atom *argv)
       }
     }
     node_builder node(argc, argv, types);
-    mpv_node res;
-    if(mpv_command_node(m_mpv, node.node(), &res) < 0)
+    if(mpv_command_node_async(m_mpv, 0, node.node()) < 0)
     {
       error("Error when executing command");
       return;
     }
-    node_autofree f(&res);
   }
   else if (s == gensym("property") || s == gensym("property_typed"))
   {
@@ -587,13 +598,11 @@ void mpv::handle_prop_event(mpv_event_property *prop)
     if (prop->format == MPV_FORMAT_INT64) {
       int64_t val = *(int64_t *)prop->data;
       m_media_width = val;
-      m_size_changed = true;
     }
   } else if (strcmp(prop->name, "height") == 0) {
     if (prop->format == MPV_FORMAT_INT64) {
       int64_t val = *(int64_t *)prop->data;
       m_media_height = val;
-      m_size_changed = true;
     }
   }
 
@@ -601,7 +610,6 @@ void mpv::handle_prop_event(mpv_event_property *prop)
   a.reserve(256);
   prop_to_atom(prop, a);
   outlet_anything(m_prop_outlet, gensym("property"), a.size(), a.data());
-
 }
 
 void mpv :: dimen_mess(int width, int height)
