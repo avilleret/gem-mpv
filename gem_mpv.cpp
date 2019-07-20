@@ -195,8 +195,6 @@ mpv::~mpv()
 
 void mpv::render(GemState *state)
 {
-
-  bool new_frame=false;
   m_event_flag=true; // FIXME it appears that the flag is not always rised by wakeup fn
   while(m_mpv && m_event_flag && !m_modified)
   {
@@ -271,7 +269,7 @@ void mpv::render(GemState *state)
 #endif
       case MPV_EVENT_TICK:
       {
-        new_frame=true;
+        m_new_frame=true;
         if(m_started)
         {
           {
@@ -345,13 +343,7 @@ void mpv::render(GemState *state)
       command_mess(gensym("command"), m_loadfile_cmd.size(), m_loadfile_cmd.data());
   }
 
-  // FIXME : when not calling gemframebuffer::render(state),
-  // lots of errors are printed in Pd's console like :
-  // GL[1284]: stack underflow
-  // but we should only draw when new frame are available for performance optimization
-
-  // if(new_frame)
-  if(true && !m_modified)
+  if(m_new_frame && !m_modified)
   {
     gemframebuffer::render(state);
     if(m_mpv_gl)
@@ -361,6 +353,14 @@ void mpv::render(GemState *state)
   }
 }
 
+void mpv::postrender(GemState *state)
+{
+  if(m_new_frame)
+  {
+    gemframebuffer::postrender(state);
+    m_new_frame = false;
+  }
+}
 void mpv::startRendering(void)
 {
   gemframebuffer::startRendering();

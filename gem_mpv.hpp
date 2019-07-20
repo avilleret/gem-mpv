@@ -165,9 +165,10 @@ class GEM_EXTERN mpv : public gemframebuffer
     mpv(int argc, t_atom*argv);
     ~mpv();
 
-    virtual void startRendering(void);
-    virtual void stopRendering(void);
-    virtual void render(GemState *state);
+    void startRendering(void);
+    void stopRendering(void);
+    void render(GemState *state);
+    void postrender(GemState *state);
 
     void command_mess(t_symbol* s, int argc, t_atom* argv);
     void dimen_mess(int width, int height);
@@ -187,6 +188,7 @@ class GEM_EXTERN mpv : public gemframebuffer
     bool m_auto_resize{};
     bool m_started{};
     bool m_reload{};
+    bool m_new_frame{};
 
     int64_t m_media_width{512};
     int64_t m_media_height{512};
