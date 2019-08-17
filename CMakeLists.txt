@@ -4,7 +4,6 @@ project(gem_mpv)
 set(CMAKE_MODULE_PATH
   ${CMAKE_CURRENT_LIST_DIR}/CMake-modules)
 set(CMAKE_PREFIX_PATH
-  "/home/antoine/dev/mpv/build/install/"
   "/usr/local/lib/pkgconfig/"
   "/usr/lib/pkgconfig/")
 
