@@ -4,12 +4,13 @@ project(pd-mpv)
 set(CMAKE_MODULE_PATH
   ${CMAKE_CURRENT_LIST_DIR}/CMake-modules)
 
+set(PUREDATA_INCLUDE_DIRS "" CACHE PATH "Path to folder containing m_pd.h" )
 set(GEM_INCLUDE_DIRS "" CACHE PATH "Path to Gem header folder")
 find_package(PkgConfig)
 set(ENV{PKG_CONFIG_PATH} "/usr/local/lib/pkgconfig/;/usr/lib/pkgconfig/")
 pkg_check_modules(GEM Gem)
 message(STATUS "GEM_INCLUDE_DIRS ${GEM_INCLUDE_DIRS}")
-include_directories(${GEM_INCLUDE_DIRS} ${GEM_INCLUDE_DIRS}/Gem)
+include_directories(${PUREDATA_INCLUDE_DIRS} ${GEM_INCLUDE_DIRS} ${GEM_INCLUDE_DIRS}/Gem)
 
 find_package(MPV 0.27.2 REQUIRED)
 
