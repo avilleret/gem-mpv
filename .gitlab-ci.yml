@@ -1,0 +1,97 @@
+stages:
+  - before_build
+  - build
+  - deploy
+
+services:
+  - docker
+
+build:docker_image_x86_64:
+  stage: before_build
+  before_script:
+    - docker info
+    - docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
+  script:
+    - cd docker 
+    - docker build -t avilleret/gem_external-devel:latest .  
+    - docker push avilleret/gem_external-devel:latest
+  tags: 
+    - shell
+    - linux
+  only:
+    changes:
+      - docker/**/*
+
+build:linux_x86_64:
+  stage: build
+  dependencies:
+    - build:docker_image_x86_64
+  before_script:
+    - git submodule update --init
+  script: 
+    - docker run 
+        -e FTP_URL 
+        -e FTP_PASSWORD 
+        -e FTP_USER 
+        -e CI_COMMIT_TAG 
+        -e CI_COMMIT_SHA 
+        -v /etc/passwd:/etc/passwd 
+        -v /etc/group:/etc/group 
+        -v ${PWD}:/pd-mpv
+        avilleret/gem_external-devel:latest 
+        /pd-mpv/docker/build_in_docker.sh
+  tags:
+    - shell
+    - linux
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - build/package/
+  artifacts:
+    name: pd-mpv-linux
+    paths:
+      - build/package/pd-*.tar.gz
+
+build:macos:
+  stage: build
+  script:
+    - git submodule sync
+    - git submodule update --init --recursive
+    - ./build_macos.sh
+  tags:
+    - shell
+    - macos
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - build-macos/package/
+  artifacts:
+    name: pd-mpv-macos
+    paths:
+      - build-macos/package/pd-*-macos.zip
+
+deploy:deken:
+  stage: deploy
+  script:
+    - docker run 
+        -e PUREDATAINFO_PASSWORD 
+        -e CI_COMMIT_SHORT_SHA 
+        -e CI_COMMIT_TAG 
+        -e CI_COMMIT_SHA 
+        -v /etc/passwd:/etc/passwd 
+        -v /etc/group:/etc/group 
+        -v ${PWD}:/pd-mpv
+        avilleret/gem_external-devel:latest 
+        /pd-mpv/push_deken.sh
+  tags:
+    - shell
+    - docker
+  only:
+    - tags
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - build/package/
+      - build-macos/package/
+    policy: pull
+
