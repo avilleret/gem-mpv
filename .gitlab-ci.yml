@@ -13,14 +13,15 @@ build:docker_image_x86_64:
     - docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
   script:
     - cd docker 
-    - docker build -t avilleret/gem_external-devel:latest .  
-    - docker push avilleret/gem_external-devel:latest
+    - docker build -t avilleret/pd-mpv-devel:latest .  
+    - docker push avilleret/pd-mpv-devel:latest
   tags: 
     - shell
     - linux
   only:
     changes:
       - docker/**/*
+      - .gitlab-ci.yml
 
 build:linux_x86_64:
   stage: build
@@ -81,7 +82,7 @@ deploy:deken:
         -v /etc/passwd:/etc/passwd 
         -v /etc/group:/etc/group 
         -v ${PWD}:/pd-mpv
-        avilleret/gem_external-devel:latest 
+        avilleret/pd-mpv-devel:latest 
         /pd-mpv/push_deken.sh
   tags:
     - shell
