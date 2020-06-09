@@ -22,6 +22,15 @@ PD_PACKAGE_ARCHIVE=${BUILD_FOLDER}/package/${PACKAGE_NAME}-${VERSION}-linux.tar.
 rm -rf ${BUILD_FOLDER}
 mkdir -p ${BUILD_FOLDER} && cd ${BUILD_FOLDER}
 
+function cleanup {
+  if [ -d  ${BUILD_FOLDER} ]; then
+    chown -R gitlab-runner ${BUILD_FOLDER}
+    chgrp -R gitlab-runner ${BUILD_FOLDER}
+  fi
+}
+
+trap cleanup EXIT
+
 cmake ${REPO_ROOT} -GNinja \
   -DCMAKE_C_COMPILER=/usr/bin/gcc-8 \
   -DCMAKE_CXX_COMPILER=/usr/bin/g++-8 \
@@ -48,6 +57,3 @@ then
   set +x # do not show FTP_* variable on command line
   curl -T "${PD_PACKAGE_ARCHIVE}" ftp://${FTP_USER}:${FTP_PASSWORD}@${FTP_URL}/releases/
 fi
-
-chown -R gitlab-runner ${BUILD_FOLDER}
-chgrp -R gitlab-runner ${BUILD_FOLDER}
