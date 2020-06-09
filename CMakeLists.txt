@@ -4,6 +4,12 @@ project(pd-mpv)
 set(CMAKE_MODULE_PATH
   ${CMAKE_CURRENT_LIST_DIR}/CMake-modules)
 
+set(CMAKE_CXX_STANDARD 11)
+
+if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang$")
+  set(CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS "${CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS} -undefined dynamic_lookup")
+endif()
+
 set(PUREDATA_INCLUDE_DIRS "" CACHE PATH "Path to folder containing m_pd.h" )
 set(GEM_INCLUDE_DIRS "" CACHE PATH "Path to Gem header folder")
 find_package(PkgConfig)
