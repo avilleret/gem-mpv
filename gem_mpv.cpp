@@ -10,11 +10,32 @@ static void wakeup(void *ctx)
   static_cast<mpv*>(ctx)->rise_event_flag();
 }
 
+#ifdef __linux__
 static void *get_proc_address_mpv(void *fn_ctx, const char *name)
 {
   // TODO adapt for Windows and MacOS
   return (void *)glXGetProcAddress((const GLubyte*)name);
 }
+#endif
+
+#ifdef __APPLE__
+#import <mach-o/dyld.h>
+#import <stdlib.h>
+#import <string.h>
+static void * get_proc_address_mpv (void *fn_ctx, const char *name)
+{
+    NSSymbol symbol;
+    char *symbolName;
+    symbolName = malloc (strlen (name) + 2); // 1
+    strcpy(symbolName + 1, name); // 2
+    symbolName[0] = '_'; // 3
+    symbol = NULL;
+    if (NSIsSymbolNameDefined (symbolName)) // 4
+        symbol = NSLookupAndBindSymbol (symbolName);
+    free (symbolName); // 5
+    return symbol ? NSAddressOfSymbol (symbol) : NULL; // 6
+}
+#endif
 
 static void node_to_atom(const mpv_node* node, std::vector<t_atom>& res)
 {
