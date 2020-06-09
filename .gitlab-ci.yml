@@ -39,7 +39,7 @@ build:linux_x86_64:
         -v /etc/passwd:/etc/passwd 
         -v /etc/group:/etc/group 
         -v ${PWD}:/pd-mpv
-        avilleret/gem_external-devel:latest 
+        avilleret/pd-mpv-devel:latest 
         /pd-mpv/docker/build_in_docker.sh
   tags:
     - shell
