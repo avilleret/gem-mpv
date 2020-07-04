@@ -1,3 +1,5 @@
+This project moved here : https://gitlab.com/antoine.villeret/pd-mpv
+
 # gem-mpv
 
 Bring the power of `libmpv` into `Gem`.
